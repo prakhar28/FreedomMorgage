@@ -1,7 +1,7 @@
 import React, {useState, useRef} from 'react';
 import {SafeAreaView, View, Button, Animated, PanResponder} from 'react-native';
-import StepComponent from './StepComponent';
-import styles from './styles';
+import StepComponent from './src/StepComponent';
+import styles from './src/styles';
 
 const steps = [
   {name: 'Update Consent', key: 'update_consent'},
