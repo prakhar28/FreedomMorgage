@@ -1,71 +1,67 @@
-import React, {useState, useRef} from 'react';
-import {SafeAreaView, View, Button, Animated, PanResponder} from 'react-native';
-import StepComponent from './src/StepComponent';
-import styles from './src/styles';
-
-const steps = [
-  {name: 'Update Consent', key: 'update_consent'},
-  {name: 'Update Mobile', key: 'update_mobile'},
-  {name: 'Paperless Enrol', key: 'paperless_enrol'},
-  {name: 'Recurring Payment', key: 'recurring_payment'},
-];
+import React, {useContext, useRef, useState} from 'react';
+import {SafeAreaView, View, Button, StyleSheet, Animated} from 'react-native';
+import StepComponent from './src/components/StepComponent';
+import {NavigationProvider, useNavigation} from './src/hooks/useNavigation';
 
 const App = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const translateX = useRef(new Animated.Value(0)).current;
-  const isAnimating = useRef(false);
+  return (
+    <NavigationProvider>
+      <MainApp />
+    </NavigationProvider>
+  );
+};
 
-  const handleNext = () => {
-    if (isAnimating.current) {
-      return;
-    }
-    isAnimating.current = true;
+const MainApp = () => {
+  const {steps, onNext, onPrev, currentStep} = useNavigation();
+  const translateX = useRef(new Animated.Value(0)).current;
+  const isLastStep = currentStep === steps.length - 1;
+
+  const animateTransition = direction => {
+    const toValue = direction === 'next' ? -500 : 500;
     Animated.timing(translateX, {
-      toValue: -1000,
-      duration: 200,
+      toValue,
+      duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      setCurrentStep(prev => (prev + 1) % steps.length);
-      translateX.setValue(1000);
+      direction === 'next' ? onNext() : onPrev();
+      translateX.setValue(direction === 'next' ? 1000 : -1000);
       Animated.timing(translateX, {
         toValue: 0,
-        duration: 200,
+        duration: 300,
         useNativeDriver: true,
-      }).start(() => {
-        isAnimating.current = false;
-      });
+      }).start();
     });
   };
-
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderMove: Animated.event([null, {dx: translateX}], {
-      useNativeDriver: false,
-    }),
-    onPanResponderRelease: (e, {dx}) => {
-      if (dx < -50) {
-        handleNext();
-      } else {
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
-
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[styles.step, {transform: [{translateX}]}]}>
-        <StepComponent step={steps[currentStep]} />
-      </Animated.View>
+      <StepComponent
+        animateTransition={animateTransition}
+        translateX={translateX}
+      />
       <View style={styles.footer}>
-        <Button title="Next" onPress={handleNext} />
+        {/*{!isFirstStep && (*/}
+        {/*  <Button title="Previous" onPress={() => animateTransition('prev')} />*/}
+        {/*)}*/}
+        {!isLastStep && (
+          <Button title="Next" onPress={() => animateTransition('next')} />
+        )}
       </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    backgroundColor: '#f0f0f0',
+  },
+  footer: {
+    padding: 20,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+  },
+});
 
 export default App;
